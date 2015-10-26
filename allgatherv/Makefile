@@ -16,3 +16,4 @@ main.o : main.cpp
 .PHONY:
 clean : 
 	rm -f main
+	rm -f main.o
