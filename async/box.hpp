@@ -1,11 +1,23 @@
 #pragma once
 
-#include "mpi.hpp"
+#include "mpi.h"
 #include "basic_types.hpp"
 #include <glog/logging.h>
 #include <gflags/gflags.h>
 #include <utility>
 #include <functional>
+#include <numeric>
+
+std::string mpi_err_info(int rc)
+{
+  char err_str[1024];
+  int len, ret;
+  ret = MPI_Error_string(rc, err_str, &len);
+  CHECK_EQ(ret, MPI_SUCCESS);
+  std::string serr(err_str, len);
+  return serr;
+}
+
 
 class Box { 
 
@@ -30,7 +42,7 @@ class Box {
 
   void reset_all_iter()
   {
-    std::fill_n(reqiter_vec, num_chan, 0);
+    std::fill_n(reqiter_vec.begin(), num_chan, 0);
     tot_req_send = 0;
   }
 
@@ -41,7 +53,7 @@ class Box {
     req_array = new MPI_Request [reqs_size];
     chanoff_vec.resize(num_chan);
     size_t tot = 0;
-    for(size_t i = 0;i < num_chan;i ++) {
+    for(int i = 0;i < num_chan;i ++) {
       chanoff_vec[i] = tot;
       tot += chansz_vec[i];
     }
@@ -166,7 +178,7 @@ class Box {
   }
 
  
-  bool wait_any(size_t *chan_id, Range* range)
+  bool wait_any(int *chan_id, Range* range)
   {
     if (tot_req_send == 0) return false; /* if there is not req flying */
     MPI_Status status;
@@ -185,7 +197,7 @@ class Box {
     *chan_id = status.MPI_SOURCE;
     *range = reqinfo_vec[comp_indx].vec_range;
     DLOG(INFO) << " BOX::DEBUG wait_any from " << *chan_id
-              << " with range " << range->to_string()
+              << " with range " << range
               << " comp_indx " << comp_indx;
     /* update stat */
     tot_req_send --;

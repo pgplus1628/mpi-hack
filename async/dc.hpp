@@ -13,12 +13,14 @@ class DistControl {
   int num_rank;
   DistControl() {}
 
-  bool init(int &argc, char **&argv) 
+  void init(int argc, char **argv) 
   {
     int ret = MPI_Init(&argc, &argv);
     CHECK(ret == MPI_SUCCESS);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(world_, &num_rank);
+    ret = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    CHECK(ret == MPI_SUCCESS);
+    ret = MPI_Comm_size(MPI_COMM_WORLD, &num_rank);
+    CHECK(ret == MPI_SUCCESS);
     LOG(INFO) << "rank = " << rank << " /  " << num_rank;
     CHECK(rank >= 0);
   }

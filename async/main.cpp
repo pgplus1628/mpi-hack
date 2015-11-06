@@ -7,10 +7,10 @@
 
 #include "basic_types.hpp"
 #include "dvec.hpp"
+#include "dc.hpp"
 
 
-DEFINE_int(bytes_mb, 32, " send recv bytes to each machine in mb.");
-
+DEFINE_int32(bytes_mb, 32, " send recv bytes to each machine in mb.");
 
 
 class Bench {
@@ -34,12 +34,12 @@ class Bench {
   DistVec<Atype> *send_dvec;
   DistVec<Atype> *recv_dvec;
 
-  DistContorl *dc;
+  DistControl *dc;
 
   void init_bbytes()
   {
     size_t ele_size = sizeof(Atype);
-    size_t tot_bytes = bytes_mb * (1024 * 1024);
+    size_t tot_bytes = FLAGS_bytes_mb * (1024 * 1024);
     num_ele = tot_bytes / ele_size;
     bbytes = num_ele * ele_size;
   }
@@ -50,18 +50,18 @@ class Bench {
     /* init dvec */
     std::vector<size_t> part_eles(dc->num_rank);
     std::for_each(part_eles.begin(), part_eles.end(),
-      [this](size_t &x){x = num_ele});
+      [this](size_t &x){x = num_ele;});
     send_dvec = new DistVec<Atype>(*dc, part_eles, ROLE_ACT);
     recv_dvec = new DistVec<Atype>(*dc, part_eles, ROLE_PAS);
     LOG(INFO) << "Bench init ok. bytes = " << bbytes << " num_ele = " << num_ele;
   }
 
 
-  Bench(DistControl * _dc) dc(_dc)
+  Bench(DistControl * _dc) : dc(_dc)
   {
   }
 
-  void execute_chunk(std::vector<T> & vec, Range range)
+  void execute_chunk(std::vector<Atype> & vec, Range range)
   {
     for (size_t it = range.first; it < range.second; it ++) {
       data_op(vec[it]);
@@ -101,8 +101,8 @@ class Bench {
     send_dvec->wait_all();
 
     /* report perf */
-    LOG(INFO) << send_dvec->report_metrics("send_dvec");
-    LOG(INFO) << recv_dvec->report_metrics("recv_dvec");
+    LOG(INFO) << send_dvec->get_metrics("send_dvec");
+    LOG(INFO) << recv_dvec->get_metrics("recv_dvec");
   }
 };
 
@@ -112,8 +112,8 @@ int main(int argc, char ** argv)
   google::ParseCommandLineFlags(&argc, &argv, false);
   google::InitGoogleLogging(argv[0]);
 
-  DistContorl dc();
-  bool ret = dc.init(argc, argv);
+  DistControl dc;
+  dc.init(argc, argv);
 
   Bench bench(&dc);
   bench.init();

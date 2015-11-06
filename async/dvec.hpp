@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 #include <utility>
+#include <functional>
+#include <algorithm>
 
 #include "box.hpp"
 #include "dc.hpp"
@@ -42,7 +44,7 @@ class DistVec {
     wait_all_ms = 0;
   }
 
-  init()
+  void init()
   {
     /* init data */
     loc_data.resize(num_chan);
@@ -67,7 +69,7 @@ class DistVec {
 
       size_t beg = 0;
       for(size_t chunk_id = 0; chunk_id < num_chunk-1; chunk_id ++) {
-        chunk_range[i] = std::make_pair(beg, beg + k_chunk_ele);
+        chunk_range[chunk_id] = std::make_pair(beg, beg + k_chunk_ele);
         beg += k_chunk_ele;
       }
       chunk_range[num_chunk-1] = std::make_pair(beg, size);
@@ -86,9 +88,9 @@ class DistVec {
   void do_asend(int chan_id, size_t chunk_id )
   {
     CHECK_LT(chan_id, num_chan);
-    CHECK_LT(chunk_id, chunk_ranges[chan_id].size());
-    auto &vec = loc_data[chan_id];
-    Range range = chunk_ranges[chan_id][chunk_id];
+    CHECK_LT(chunk_id, chunk_ranges[chan_id]->size());
+    auto &vec = (*loc_data[chan_id]);
+    Range range = (*(chunk_ranges[chan_id]))[chunk_id];
     void *addr = vec.data() + range.first;
     size_t bytes = sizeof(T) * (range.second - range.first);
     box->async_send(chan_id, addr, bytes, range);
@@ -99,8 +101,8 @@ class DistVec {
   {
     box->reset();
     for(size_t chan_id = 0; chan_id < num_chan; chan_id ++) {
-      auto & chunk_range = chunk_ranges[chan_id];
-      auto &vec = loc_data[chan_id];
+      auto & chunk_range = *(chunk_ranges[chan_id]);
+      auto &vec = *(loc_data[chan_id]);
 
       for( auto range : chunk_range ) {
         void *addr = vec.data() + range.first;
@@ -119,18 +121,21 @@ class DistVec {
     TIMER(t1);
     box->wait_all();
     TIMER(t2);
-    wait_all += (t2 - t1);
+    wait_all_ms += (t2 - t1);
   }
 
 
-  bool wait_any(int *chan_id, Range *range)
+  bool wait_any(int *chan_id, size_t * chunk_id)
   {
     bool ret;
     int64_t t1, t2;
     TIMER(t1);
-    ret = box->wait_any(chan_id, range);
+    Range range;
+    ret = box->wait_any(chan_id, &range);
+    *chunk_id = range.first / k_chunk_ele;
     TIMER(t2);
     wait_any_ms += (t2 - t1);
+    return ret;
   }
 
   std::string get_metrics(std::string name)

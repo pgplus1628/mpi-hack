@@ -1,7 +1,7 @@
 
 CXX?=g++
 CXXFLAGS?=-fPIC -O3 -g -Wall -std=c++11
-LDFLAGS?=-L/home/zork/loclib/mpich-3.1.4/lib -lglog -lmpich
+LDFLAGS?=-L/home/zork/loclib/mpich-3.1.4/lib -lglog -lmpich -lgflags
 INFLAGS?=-I. -I/home/zork/loclib/mpich-3.1.4/include
 
 all : main
