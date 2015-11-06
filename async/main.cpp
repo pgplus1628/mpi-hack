@@ -4,6 +4,7 @@
 #include <glog/logging.h>
 #include <gflags/gflags.h>
 #include <functional>
+#include <unistd.h>
 
 #include "basic_types.hpp"
 #include "dvec.hpp"
@@ -52,7 +53,9 @@ class Bench {
     std::for_each(part_eles.begin(), part_eles.end(),
       [this](size_t &x){x = num_ele;});
     send_dvec = new DistVec<Atype>(*dc, part_eles, ROLE_ACT);
+    send_dvec->init();
     recv_dvec = new DistVec<Atype>(*dc, part_eles, ROLE_PAS);
+    recv_dvec->init();
     LOG(INFO) << "Bench init ok. bytes = " << bbytes << " num_ele = " << num_ele;
   }
 
@@ -63,14 +66,18 @@ class Bench {
 
   void execute_chunk(std::vector<Atype> & vec, Range range)
   {
+    uint32_t ms = 10000;
     for (size_t it = range.first; it < range.second; it ++) {
       data_op(vec[it]);
     }
+    usleep(ms);
   }
 
 
   void do_bench()
   {
+    LOG(INFO) << dc->rank << " Bech Begin .";
+    dc->barrier();
     /* post receives */
     recv_dvec->post_receives();
     size_t num_chan = dc->num_rank;
@@ -90,19 +97,20 @@ class Bench {
       }
     }
 
+    LOG(INFO) << " Send OK.-------------";
     /* receive chunk */
     int chan_id ;
     size_t chunk_id;
     while (recv_dvec->wait_any(&chan_id, &chunk_id)) {
-      LOG(INFO) << dc->rank << " -> " << chan_id << " chunk " << chunk_id;
+      //LOG(INFO) << dc->rank << " -> " << chan_id << " chunk " << chunk_id;
     }
 
     /* wait finish */
     send_dvec->wait_all();
 
     /* report perf */
-    LOG(INFO) << send_dvec->get_metrics("send_dvec");
-    LOG(INFO) << recv_dvec->get_metrics("recv_dvec");
+    LOG(INFO) << dc->rank << " METRICS::"  << send_dvec->get_metrics("send_dvec");
+    LOG(INFO) << dc->rank << " METRICS::" << recv_dvec->get_metrics("recv_dvec");
   }
 };
 
@@ -111,6 +119,7 @@ int main(int argc, char ** argv)
 {
   google::ParseCommandLineFlags(&argc, &argv, false);
   google::InitGoogleLogging(argv[0]);
+  LOG(INFO) << " Bench async operation performance .";
 
   DistControl dc;
   dc.init(argc, argv);

@@ -36,7 +36,7 @@ class DistVec {
   int64_t wait_all_ms;
 
 
-  DistVec(DistControl _dc, std::vector<size_t> size_vec_in, Role _role)
+  DistVec(DistControl &_dc, std::vector<size_t> size_vec_in, Role _role)
     : dc( _dc), size_vec(size_vec_in), role(_role)
   {
     num_chan = dc.num_rank;
@@ -56,7 +56,7 @@ class DistVec {
     size_t ele_bytes = sizeof(T);
     chunk_bytes = TBufMB * (1024 * 1024);
     if (ele_bytes > chunk_bytes) chunk_bytes = ele_bytes;
-    size_t k_chunk_ele = chunk_bytes / ele_bytes;
+    k_chunk_ele = chunk_bytes / ele_bytes;
     chunk_bytes = k_chunk_ele * ele_bytes;
 
     /* fill chunk_range vec */
@@ -64,8 +64,8 @@ class DistVec {
     for(size_t cid = 0;cid < num_chan; cid ++) {
       size_t size = size_vec[cid];
       size_t num_chunk = size / k_chunk_ele;
-      auto &chunk_range = chunk_ranges[cid];
-      chunk_range = new std::vector<Range>(num_chunk);
+      chunk_ranges[cid] = new std::vector<Range>(num_chunk);
+      auto &chunk_range = *(chunk_ranges[cid]);
 
       size_t beg = 0;
       for(size_t chunk_id = 0; chunk_id < num_chunk-1; chunk_id ++) {
@@ -77,8 +77,9 @@ class DistVec {
 
     /* init box */
     std::vector<size_t> num_chunks(num_chan);
-    std::transform(chunk_ranges.begin(), chunk_ranges.end(), num_chunks.begin(),
-      [](const std::vector<size_t> &e) { return e.size(); });
+    for(int chan_id = 0;chan_id < num_chan;chan_id ++) {
+      num_chunks[chan_id] = chunk_ranges[chan_id]->size();
+    }
     box = new Box(num_chan, num_chunks);
 
     /* update status */
@@ -94,6 +95,7 @@ class DistVec {
     void *addr = vec.data() + range.first;
     size_t bytes = sizeof(T) * (range.second - range.first);
     box->async_send(chan_id, addr, bytes, range);
+    LOG(INFO) << "Box::do_asend  " << dc.rank << " -> " << chan_id << " chunk " << chunk_id;
   }
 
 
@@ -110,8 +112,8 @@ class DistVec {
         box->async_recv(chan_id, addr, bytes, range);
         flying_recv += 1;
       }
-
     }
+    LOG(INFO) << "Box::post_receives ok.";
   }
 
 
@@ -122,6 +124,7 @@ class DistVec {
     box->wait_all();
     TIMER(t2);
     wait_all_ms += (t2 - t1);
+    DLOG(INFO) << "Box::wait_all ok.";
   }
 
 
@@ -135,6 +138,7 @@ class DistVec {
     *chunk_id = range.first / k_chunk_ele;
     TIMER(t2);
     wait_any_ms += (t2 - t1);
+    DLOG(INFO) << "Box::wait_any ok.";
     return ret;
   }
 

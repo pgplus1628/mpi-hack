@@ -197,7 +197,7 @@ class Box {
     *chan_id = status.MPI_SOURCE;
     *range = reqinfo_vec[comp_indx].vec_range;
     DLOG(INFO) << " BOX::DEBUG wait_any from " << *chan_id
-              << " with range " << range
+              << " with range [ " << range->first << " , " << range->second  << " ) "
               << " comp_indx " << comp_indx;
     /* update stat */
     tot_req_send --;
