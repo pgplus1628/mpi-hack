@@ -3,6 +3,7 @@
 #include <utility>
 #include <time.h>
 #include <sys/time.h>
+#include <gflags/gflags.h>
 
 typedef std::pair<size_t, size_t> Range;
 
@@ -21,3 +22,5 @@ enum Role {
 
 #define likely(x) __builtin_expect((x), 1)
 #define unlikely(x) __builtin_expect((x), 0)
+
+DECLARE_int32(tbuf_mb);

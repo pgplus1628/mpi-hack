@@ -184,7 +184,8 @@ class Box {
     MPI_Status status;
     int comp_indx;
 
-    MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    //MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
 
     int rc = MPI_Waitany(reqs_size, req_array, &comp_indx, &status);
 

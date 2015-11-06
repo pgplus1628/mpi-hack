@@ -8,12 +8,6 @@
 #include "dc.hpp"
 #include "basic_types.hpp"
 
-#define TBufMB (1)
-
-
-
-
-
 
 template<typename T>
 class DistVec {
@@ -54,7 +48,7 @@ class DistVec {
 
     /* resize chunk_bytes */
     size_t ele_bytes = sizeof(T);
-    chunk_bytes = TBufMB * (1024 * 1024);
+    chunk_bytes = FLAGS_tbuf_mb * (1024 * 1024);
     if (ele_bytes > chunk_bytes) chunk_bytes = ele_bytes;
     k_chunk_ele = chunk_bytes / ele_bytes;
     chunk_bytes = k_chunk_ele * ele_bytes;
@@ -95,7 +89,7 @@ class DistVec {
     void *addr = vec.data() + range.first;
     size_t bytes = sizeof(T) * (range.second - range.first);
     box->async_send(chan_id, addr, bytes, range);
-    LOG(INFO) << "Box::do_asend  " << dc.rank << " -> " << chan_id << " chunk " << chunk_id;
+    DLOG(INFO) << "Box::do_asend  " << dc.rank << " -> " << chan_id << " chunk " << chunk_id;
   }
 
 
@@ -113,7 +107,7 @@ class DistVec {
         flying_recv += 1;
       }
     }
-    LOG(INFO) << "Box::post_receives ok.";
+    DLOG(INFO) << "Box::post_receives ok.";
   }
 
 

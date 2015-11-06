@@ -31,4 +31,11 @@ class DistControl {
     CHECK_EQ(ret, MPI_SUCCESS);
   }
 
+
+  ~DistControl() 
+  {
+    int ret = MPI_Finalize();
+    CHECK_EQ(ret, MPI_SUCCESS) << "DistContro::finalize MPI_Finalize failed.";
+  }
+
 };

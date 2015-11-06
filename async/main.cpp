@@ -12,7 +12,7 @@
 
 
 DEFINE_int32(bytes_mb, 32, " send recv bytes to each machine in mb.");
-
+DEFINE_int32(sleep_ms, 0, " sleep in ms to simulate complex operations.");
 
 class Bench {
 
@@ -66,11 +66,12 @@ class Bench {
 
   void execute_chunk(std::vector<Atype> & vec, Range range)
   {
-    uint32_t ms = 10000;
     for (size_t it = range.first; it < range.second; it ++) {
       data_op(vec[it]);
     }
-    usleep(ms);
+    if ( unlikely(FLAGS_sleep_ms != 0) ) {
+      usleep((uint32_t)FLAGS_sleep_ms * 1000);
+    }
   }
 
 
@@ -120,6 +121,8 @@ int main(int argc, char ** argv)
   google::ParseCommandLineFlags(&argc, &argv, false);
   google::InitGoogleLogging(argv[0]);
   LOG(INFO) << " Bench async operation performance .";
+  LOG(INFO) << " bytes_mb : " << FLAGS_bytes_mb << " tbuf_mb : " << FLAGS_tbuf_mb 
+            << " sleep_ms : " << FLAGS_sleep_ms;
 
   DistControl dc;
   dc.init(argc, argv);
