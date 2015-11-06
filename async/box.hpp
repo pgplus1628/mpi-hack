@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mpi.hpp"
+#include "basic_types.hpp"
 #include <glog/logging.h>
 #include <gflags/gflags.h>
 #include <utility>
@@ -9,7 +10,6 @@
 class Box { 
 
   public : 
-  typedef std::pair<size_t, size_t> Range;
 
   struct ReqInfo {
     size_t reqid;
@@ -22,8 +22,8 @@ class Box {
   MPI_Request *req_array;
   size_t reqs_size;
   int num_chan;
-  std::vector<size_t> chanoff_vec; // channel offse
-  std::vector<size_t> chansz_vec;  // channel size
+  std::vector<size_t> chanoff_vec; // channel offset
+  std::vector<size_t> chansz_vec;  // number of chunks in each channel
   std::vector<ReqInfo> reqinfo_vec;  // req info vector holds every ReqInfo
   std::vector<size_t> reqiter_vec; // req id iterator for each channel
   size_t tot_req_send;
