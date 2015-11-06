@@ -13,6 +13,8 @@
 
 DEFINE_int32(bytes_mb, 32, " send recv bytes to each machine in mb.");
 DEFINE_int32(sleep_ms, 0, " sleep in ms to simulate complex operations.");
+DEFINE_bool(ring, true, " Ring communication ." );
+
 
 class Bench {
 
@@ -81,10 +83,17 @@ class Bench {
     dc->barrier();
     /* post receives */
     recv_dvec->post_receives();
-    size_t num_chan = dc->num_rank;
+    int num_chan = dc->num_rank;
 
     /* do work and chunk send */
-    for(size_t chan_id = 0; chan_id < num_chan; chan_id ++) {
+    for(int chan_cnt = 0; chan_cnt < num_chan; chan_cnt ++) {
+      int chan_id;
+      if (FLAGS_ring) {
+        chan_id = ( dc->rank + chan_cnt) % num_chan;
+      } else { 
+        chan_id = chan_cnt;
+      }
+
       /* get chunk and do work and send chunk */
       auto &chunk_range = *(send_dvec->chunk_ranges[chan_id]);
       auto &vec = *(send_dvec->loc_data[chan_id]);

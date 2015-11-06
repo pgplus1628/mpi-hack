@@ -1,12 +1,12 @@
 
-#CXX?=g++
-CXX=/home/zork/loclib/openmpi-1.10.1/bin/mpic++
+CXX?=g++
+#CXX=/home/zork/loclib/openmpi-1.10.1/bin/mpic++
 CXXFLAGS?=-fPIC -O3 -g -Wall -std=c++11 -DNDEBUG
-#LDFLAGS?=-L/home/zork/loclib/mpich-3.1.4/lib -lglog -lmpich -lgflags
-#INFLAGS?=-I. -I/home/zork/loclib/mpich-3.1.4/include
+LDFLAGS?=-L/home/zork/loclib/mpich-3.1.4/lib -lglog -lmpich -lgflags
+INFLAGS?=-I. -I/home/zork/loclib/mpich-3.1.4/include
 
-LDFLAGS?=-L/home/zork/loclib/openmpi-1.10.1/lib -lglog -lmpi -lgflags
-INFLAGS?=-I. -I/home/zork/loclib/openmpi-1.10.1/include
+#LDFLAGS?=-L/home/zork/loclib/openmpi-1.10.1/lib -lglog -lmpi -lgflags
+#INFLAGS?=-I. -I/home/zork/loclib/openmpi-1.10.1/include
 
 
 all : main
